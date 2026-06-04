@@ -1,5 +1,381 @@
+PANTRYPILOT PROPRIETARY SOFTWARE LICENSE AGREEMENT
+
 Copyright (c) 2026 Indraneel Mandal. All Rights Reserved.
 
-This software and its source code are the proprietary and confidential property of Indraneel Mandal. No part of this software may be copied, modified, distributed, published, sublicensed, or used in any form without the prior written permission of the copyright holder. Unauthorized use is strictly prohibited.
+Effective for all copies, versions, and derivatives of the Software (as defined
+below) made available on or after the 1st day of January, 2026.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR ITS USE.
+IMPORTANT — READ CAREFULLY: This Proprietary Software License Agreement (this
+"Agreement") is a legally binding agreement between you, whether an individual or
+a single legal entity ("You" or "Licensee"), and Indraneel Mandal, the sole
+author and owner of the Software ("Licensor", "Author", "I", "me", or "my"). By
+downloading, copying, accessing, installing, executing, viewing the source code
+of, or otherwise using the Software in whole or in part, You acknowledge that You
+have read this Agreement, understand it, and agree to be bound by all of its
+terms and conditions. If You do not agree to every term of this Agreement, You
+are not granted any rights whatsoever and You must not download, copy, access,
+install, execute, view, or use the Software, and You must immediately and
+permanently delete and destroy any and all copies of the Software in Your
+possession or control.
+
+
+1. DEFINITIONS
+
+1.1 "Software" means the computer program known as "PantryPilot", in any and all
+of its forms and media, including without limitation the human-readable source
+code, object code, markup, stylesheets, scripts, embedded data sets, recipe and
+ingredient data, configuration files, build artifacts, icons, fonts (excluding
+Third-Party Components governed by their own licenses), images, text, layouts,
+visual designs, user interfaces, "look and feel", and any accompanying
+documentation, together with all Updates and Derivative Works thereof provided or
+made available by the Licensor.
+
+1.2 "Documentation" means any user manuals, technical specifications, readme
+files, or other materials, in any form, that describe the operation, features, or
+use of the Software and that are supplied by the Licensor.
+
+1.3 "Update" means any patch, bug fix, correction, modification, enhancement,
+upgrade, revision, new version, or other change to the Software that the Licensor
+may, at its sole discretion, make available.
+
+1.4 "Derivative Work" means any work, in any form, that is based upon, derived
+from, incorporates, adapts, translates, transforms, modifies, or is substantially
+similar to the Software or any portion thereof, including any work that would
+constitute an infringement of the copyright in the Software absent a license.
+
+1.5 "Intellectual Property Rights" means any and all rights, titles, and
+interests, whether now existing or arising in the future, anywhere in the world,
+in and to any copyrights, moral rights, patent rights, trade secrets, trademarks,
+service marks, trade names, trade dress, database rights, design rights, and any
+other proprietary or intellectual property rights of any kind, whether registered
+or unregistered, together with all applications, registrations, renewals, and
+extensions thereof.
+
+1.6 "Confidential Information" means the Software (including in particular its
+source code, structure, organization, algorithms, logic, data models, and design)
+and any other non-public information disclosed by or on behalf of the Licensor
+that is marked as confidential or that a reasonable person would understand to be
+confidential given the nature of the information and the circumstances of
+disclosure.
+
+1.7 "Third-Party Components" means any third-party software, libraries, fonts,
+typefaces, or other materials that may be referenced by, linked to, or
+distributed alongside the Software and that are licensed under their own separate
+terms.
+
+
+2. OWNERSHIP AND RESERVATION OF RIGHTS
+
+2.1 The Software is licensed, not sold. The Licensor and its successors and
+assigns retain all right, title, and interest in and to the Software and all
+copies thereof, including all Intellectual Property Rights therein.
+
+2.2 The Software is the proprietary and confidential property of the Licensor and
+constitutes valuable trade secrets and copyrighted material of the Licensor. The
+Software is protected by the copyright laws of the Republic of India, by
+international copyright treaties and conventions, and by other applicable laws.
+
+2.3 ALL RIGHTS NOT EXPRESSLY GRANTED TO YOU UNDER THIS AGREEMENT ARE RESERVED IN
+THEIR ENTIRETY BY THE LICENSOR. No license, right, title, or interest in or to
+any Intellectual Property Right is granted to You by implication, estoppel,
+exhaustion, or otherwise, except for the limited rights (if any) expressly set
+forth in this Agreement.
+
+2.4 No ownership of the Software or any copy thereof is transferred to You under
+any circumstance. You acquire only such limited rights as are expressly stated in
+Section 3, if any.
+
+
+3. ABSENCE OF LICENSE GRANT; NO PERMITTED USE WITHOUT WRITTEN CONSENT
+
+3.1 No part of the Software may be copied, reproduced, modified, adapted,
+translated, published, displayed, performed, distributed, transmitted,
+sublicensed, leased, rented, lent, sold, assigned, disclosed, or used in any form
+or by any means, in whole or in part, for any purpose whatsoever, without the
+prior, express, written permission of the copyright holder, Indraneel Mandal.
+Unauthorized use is strictly prohibited.
+
+3.2 Any rights that the Licensor may, in its sole and absolute discretion, elect
+to grant to You shall be effective only if set out in a separate written
+instrument signed by the Licensor, and shall be limited strictly to the scope,
+purpose, duration, and conditions expressly stated therein. In the absence of
+such a signed written instrument, You have no right to use the Software for any
+purpose, and any such use is unauthorized and constitutes infringement.
+
+3.3 Any permission that may be granted shall be personal to You, non-exclusive,
+non-transferable, non-sublicensable, and revocable at any time by the Licensor,
+and shall not extend to any affiliate, contractor, agent, or third party.
+
+
+4. RESTRICTIONS
+
+Without limiting the generality of Section 3, and regardless of any other
+provision of this Agreement, You shall not, and shall not permit, enable, or
+assist any third party to:
+
+4.1 copy, reproduce, or duplicate the Software or any portion thereof, except as
+strictly and unavoidably required for the operation of any use expressly
+authorized in writing by the Licensor;
+
+4.2 modify, alter, adapt, translate, or create any Derivative Work based on the
+Software or any portion thereof;
+
+4.3 distribute, publish, sell, resell, sublicense, lease, rent, lend, assign,
+transfer, host, time-share, or otherwise make the Software available to any third
+party, whether for a fee or free of charge, and whether on a standalone basis or
+as part of any other product, service, or offering;
+
+4.4 reverse engineer, decompile, disassemble, decode, or otherwise attempt to
+derive or reconstruct the source code, underlying ideas, algorithms, file
+formats, structure, or organization of any portion of the Software that is
+provided in object or compiled form, except to the limited extent that such
+activity is expressly permitted by applicable law notwithstanding this
+prohibition, and then only after providing the Licensor with prior written notice
+and a reasonable opportunity to provide the relevant information or interface;
+
+4.5 remove, obscure, alter, or fail to reproduce any copyright, trademark, or
+other proprietary rights notice, legend, symbol, or label appearing in or on the
+Software, including any notice contained in the source code or Documentation;
+
+4.6 use the Software to develop, train, or improve any product, service, dataset,
+model, or work that is competitive with or substantially similar to the Software,
+or use the Software for any benchmarking, comparison, or analysis the results of
+which are disclosed to any third party;
+
+4.7 use the name "PantryPilot", "Indraneel Mandal", or any of the Licensor's
+trademarks, service marks, trade names, or logos in any manner, including to
+endorse, promote, or advertise any product or service, without the prior written
+consent of the Licensor;
+
+4.8 circumvent, disable, or interfere with any license-control, security, access-
+control, or technical-protection mechanism contained in or applicable to the
+Software; or
+
+4.9 use the Software in any manner that infringes, misappropriates, or violates
+the Intellectual Property Rights or other rights of the Licensor or any third
+party, or that violates any applicable law, statute, ordinance, or regulation.
+
+
+5. CONFIDENTIALITY
+
+5.1 You acknowledge that the Software and its source code embody and contain
+valuable Confidential Information and trade secrets of the Licensor. You shall
+hold all Confidential Information in strict confidence and shall not disclose,
+publish, or disseminate any Confidential Information to any third party, and shall
+use at least the same degree of care to protect the Confidential Information as
+You use to protect Your own confidential information of like importance, but in no
+event less than a reasonable degree of care.
+
+5.2 You shall use the Confidential Information solely to the extent necessary to
+exercise rights (if any) expressly granted to You in writing by the Licensor, and
+for no other purpose.
+
+5.3 The obligations in this Section 5 shall survive the termination or expiration
+of this Agreement and shall continue for so long as the relevant information
+remains a trade secret or otherwise confidential.
+
+
+6. FEEDBACK
+
+If You provide the Licensor with any suggestions, comments, ideas, improvements,
+or other feedback relating to the Software ("Feedback"), You hereby irrevocably
+assign to the Licensor all right, title, and interest in and to such Feedback,
+and the Licensor shall be free to use, disclose, reproduce, and exploit such
+Feedback without restriction, attribution, or compensation to You.
+
+
+7. THIRD-PARTY COMPONENTS
+
+The Software may reference, link to, load, or be distributed together with
+Third-Party Components. Such Third-Party Components are not part of the Software
+licensed under this Agreement and remain the property of their respective owners.
+Your use of any Third-Party Component is governed solely by the license terms
+applicable to that Third-Party Component, and nothing in this Agreement grants You
+any rights in or to, or modifies the terms applicable to, any Third-Party
+Component. The Licensor makes no representation or warranty with respect to any
+Third-Party Component.
+
+
+8. PRIVACY AND DATA
+
+The Software is designed to operate locally and to store data created by You
+within Your own browser or device storage. The Licensor does not, by means of the
+Software, collect, transmit, process, or store any such data on the Licensor's
+behalf. You are solely responsible for any data You enter into, generate with, or
+export from the Software, and for maintaining appropriate backups thereof.
+
+
+9. TERM AND TERMINATION
+
+9.1 This Agreement is effective upon Your first download, copy, access,
+installation, execution, viewing, or use of the Software and shall continue until
+terminated as provided herein.
+
+9.2 This Agreement, and any and all rights granted to You hereunder (if any),
+shall terminate automatically and immediately, without notice, if You breach any
+term or condition of this Agreement. The Licensor may also terminate this
+Agreement and any such rights at any time, for any reason or no reason, in its
+sole discretion, with or without notice.
+
+9.3 Upon any termination or expiration of this Agreement, You shall immediately
+cease all use of the Software and shall permanently delete, destroy, and remove
+all copies of the Software (in whole or in part, and in any form or media) in Your
+possession or control, and, upon the Licensor's request, certify in writing that
+You have done so.
+
+9.4 Sections 1, 2, 4, 5, 6, 7, 9.3, 9.4, 10, 11, 12, 13, 14, and 15 shall survive
+any termination or expiration of this Agreement.
+
+
+10. DISCLAIMER OF WARRANTIES
+
+THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE", WITH ALL FAULTS AND DEFECTS,
+AND WITHOUT WARRANTY OF ANY KIND. TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE
+LAW, THE LICENSOR EXPRESSLY DISCLAIMS ALL WARRANTIES, REPRESENTATIONS, AND
+CONDITIONS OF ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE,
+INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE, TITLE, QUIET ENJOYMENT, ACCURACY, AND NON-INFRINGEMENT.
+THE LICENSOR DOES NOT WARRANT THAT THE SOFTWARE WILL MEET YOUR REQUIREMENTS, THAT
+THE OPERATION OF THE SOFTWARE WILL BE UNINTERRUPTED, TIMELY, SECURE, OR ERROR-
+FREE, THAT DEFECTS WILL BE CORRECTED, OR THAT THE SOFTWARE IS FREE OF VIRUSES OR
+OTHER HARMFUL COMPONENTS. ANY INFORMATION OR DATA PROVIDED THROUGH THE SOFTWARE,
+INCLUDING WITHOUT LIMITATION ANY RECIPE, INGREDIENT, NUTRITIONAL, SHELF-LIFE, OR
+COST INFORMATION, IS PROVIDED FOR GENERAL INFORMATIONAL PURPOSES ONLY, MAY BE
+INACCURATE OR INCOMPLETE, AND MUST NOT BE RELIED UPON FOR ANY HEALTH, DIETARY,
+SAFETY, FINANCIAL, OR OTHER DECISION; YOU ASSUME ALL RISK ARISING FROM YOUR
+RELIANCE ON ANY SUCH INFORMATION. SOME JURISDICTIONS DO NOT ALLOW THE EXCLUSION OF
+CERTAIN WARRANTIES, SO SOME OF THE ABOVE EXCLUSIONS MAY NOT APPLY TO YOU, IN WHICH
+CASE SUCH WARRANTIES ARE LIMITED TO THE MINIMUM SCOPE AND DURATION PERMITTED BY
+APPLICABLE LAW.
+
+
+11. LIMITATION OF LIABILITY
+
+11.1 TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL THE
+LICENSOR BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL,
+EXEMPLARY, OR PUNITIVE DAMAGES WHATSOEVER, OR FOR ANY LOSS OF PROFITS, REVENUE,
+GOODWILL, USE, DATA, OR OTHER INTANGIBLE LOSSES, ARISING OUT OF OR IN CONNECTION
+WITH THIS AGREEMENT OR THE SOFTWARE OR ITS USE OR INABILITY TO BE USED, WHETHER
+BASED ON WARRANTY, CONTRACT, TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY, OR ANY
+OTHER LEGAL THEORY, AND WHETHER OR NOT THE LICENSOR HAS BEEN ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGES.
+
+11.2 IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR ITS USE.
+
+11.3 TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE TOTAL AGGREGATE
+LIABILITY OF THE LICENSOR ARISING OUT OF OR RELATING TO THIS AGREEMENT OR THE
+SOFTWARE, FROM ALL CAUSES OF ACTION AND UNDER ALL THEORIES OF LIABILITY, SHALL NOT
+EXCEED THE GREATER OF (A) THE TOTAL AMOUNT, IF ANY, ACTUALLY PAID BY YOU TO THE
+LICENSOR FOR THE SOFTWARE, OR (B) ONE UNITED STATES DOLLAR (USD $1.00).
+
+11.4 THE LIMITATIONS AND EXCLUSIONS IN THIS SECTION 11 APPLY NOTWITHSTANDING THE
+FAILURE OF THE ESSENTIAL PURPOSE OF ANY LIMITED REMEDY. SOME JURISDICTIONS DO NOT
+ALLOW THE EXCLUSION OR LIMITATION OF CERTAIN DAMAGES, SO SOME OF THE ABOVE MAY NOT
+APPLY TO YOU; IN SUCH CASE, THE LICENSOR'S LIABILITY SHALL BE LIMITED TO THE
+MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW.
+
+
+12. INDEMNIFICATION
+
+You shall defend, indemnify, and hold harmless the Licensor and its successors,
+assigns, and representatives from and against any and all claims, demands, suits,
+actions, proceedings, losses, liabilities, damages, costs, and expenses
+(including reasonable attorneys' fees and legal costs) arising out of or relating
+to (a) Your use of the Software, (b) Your breach or alleged breach of this
+Agreement, (c) Your violation of any applicable law or of any right of any third
+party, or (d) any Derivative Work, modification, or unauthorized distribution of
+the Software made by or on behalf of You.
+
+
+13. GOVERNING LAW AND DISPUTE RESOLUTION
+
+13.1 This Agreement and any dispute or claim (including non-contractual disputes
+or claims) arising out of or in connection with it or its subject matter or
+formation shall be governed by and construed in accordance with the laws of the
+Republic of India, without regard to its conflict-of-laws principles.
+
+13.2 The courts located in Kolkata, West Bengal, India shall have exclusive
+jurisdiction to settle any dispute or claim arising out of or in connection with
+this Agreement, and each party irrevocably submits to the exclusive jurisdiction
+of such courts.
+
+13.3 The United Nations Convention on Contracts for the International Sale of
+Goods shall not apply to this Agreement.
+
+
+14. EQUITABLE RELIEF
+
+You acknowledge that any breach or threatened breach of Section 3, 4, or 5 of this
+Agreement would cause the Licensor irreparable harm for which monetary damages
+would be an inadequate remedy. Accordingly, in addition to any other remedies
+available at law or in equity, the Licensor shall be entitled to seek injunctive
+and other equitable relief to prevent or restrain any such breach or threatened
+breach, without the necessity of posting any bond or other security and without
+the necessity of proving actual damages.
+
+
+15. GENERAL PROVISIONS
+
+15.1 Entire Agreement. This Agreement constitutes the entire agreement between You
+and the Licensor with respect to the Software and supersedes all prior or
+contemporaneous understandings, agreements, representations, and communications,
+whether written or oral, relating to its subject matter.
+
+15.2 Amendments. No amendment, modification, or waiver of any provision of this
+Agreement shall be effective unless made in a writing signed by the Licensor. The
+Licensor may modify the terms applicable to future versions of the Software by
+including revised terms with such versions.
+
+15.3 Waiver. No failure or delay by the Licensor in exercising any right, power,
+or remedy under this Agreement shall operate as a waiver thereof, nor shall any
+single or partial exercise of any right, power, or remedy preclude any further
+exercise thereof or the exercise of any other right, power, or remedy.
+
+15.4 Severability. If any provision of this Agreement is held to be invalid,
+illegal, or unenforceable by a court of competent jurisdiction, such provision
+shall be modified to the minimum extent necessary to make it valid, legal, and
+enforceable, or, if it cannot be so modified, shall be severed from this
+Agreement, and the remaining provisions shall continue in full force and effect.
+
+15.5 Assignment. You may not assign, transfer, delegate, or sublicense this
+Agreement or any of Your rights or obligations hereunder, in whole or in part, by
+operation of law or otherwise, without the prior written consent of the Licensor,
+and any attempted assignment in violation of this provision shall be null and
+void. The Licensor may freely assign or transfer this Agreement without
+restriction. This Agreement shall bind and inure to the benefit of the parties and
+their permitted successors and assigns.
+
+15.6 No Third-Party Beneficiaries. This Agreement is for the sole benefit of the
+parties hereto and their permitted successors and assigns, and nothing herein is
+intended to or shall confer upon any other person any legal or equitable right,
+benefit, or remedy of any nature whatsoever.
+
+15.7 Export Compliance. You shall comply with all applicable export-control and
+sanctions laws and regulations and shall not export, re-export, or transfer the
+Software in violation of any such laws or regulations.
+
+15.8 Force Majeure. The Licensor shall not be liable for any failure or delay in
+performance resulting from causes beyond its reasonable control.
+
+15.9 Headings. Section headings are for convenience of reference only and shall
+not affect the interpretation of this Agreement.
+
+15.10 Survival. Any provision of this Agreement that by its nature should survive
+termination shall survive termination or expiration of this Agreement.
+
+
+16. CONTACT
+
+All notices, requests for permission, and other communications under this
+Agreement shall be directed in writing to the copyright holder:
+
+    Indraneel Mandal
+    Copyright Holder and Licensor of PantryPilot
+
+By using the Software, You acknowledge that this Agreement is the complete and
+exclusive statement of the agreement between You and the Licensor and that it
+supersedes any proposal or prior agreement, oral or written, and any other
+communications relating to the subject matter of this Agreement.
+
+Copyright (c) 2026 Indraneel Mandal. All Rights Reserved.
