@@ -1,5 +1,3 @@
-/* PantryPilot — Copyright (c) 2026 Indraneel Mandal. All Rights Reserved. */
-/* ===== Embedded reference data (generated) ===== */
 const INGREDIENT_CATALOG = [
   {
     "name": "almonds",
@@ -6265,31 +6263,19 @@ const SEED_RECIPES = [
   }
 ];
 
-/* ============================================================================
-   PantryPilot — application logic
-   A private, fully client-side pantry + recipe + waste tracker.
-   Data above (INGREDIENT_CATALOG, SEED_RECIPES) is embedded; nothing leaves
-   the browser. State lives in localStorage. No frameworks, no build step.
-   ========================================================================== */
-
 'use strict';
 
-/* ----------------------------------------------------------------------------
-   Constants & lookups
----------------------------------------------------------------------------- */
 const STORAGE_KEY = 'pantrypilot.v1';
 const SCHEMA_VERSION = 1;
-const USE_SOON_DAYS = 3;                 // <= this many days left => "Use soon"
+const USE_SOON_DAYS = 3;
 const DIET_TAGS = ['vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'low-carb', 'high-protein'];
 const UNIT_OPTIONS = ['pcs', 'g', 'kg', 'ml', 'l', 'cup', 'tbsp', 'tsp', 'clove', 'slice', 'can', 'stalk', 'pinch'];
 const USD = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+const MAX_MISSING_CAP = 12;
 
 const CATALOG_BY_NAME = new Map(INGREDIENT_CATALOG.map((c) => [c.name, c]));
 const CATEGORIES = Array.from(new Set(INGREDIENT_CATALOG.map((c) => c.category))).sort();
 
-/* ----------------------------------------------------------------------------
-   Tiny DOM + misc helpers
----------------------------------------------------------------------------- */
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
@@ -6313,9 +6299,6 @@ function fmtQty(n) {
   return Number.isInteger(num) ? String(num) : String(parseFloat(num.toFixed(2)));
 }
 
-/* ----------------------------------------------------------------------------
-   Date utilities (all calculations are day-granular & local-time)
----------------------------------------------------------------------------- */
 function startOfDay(d = new Date()) {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
@@ -6327,7 +6310,6 @@ function addDays(date, days) {
   return x;
 }
 function toISODate(date) {
-  // YYYY-MM-DD in local time
   const x = startOfDay(date);
   const y = x.getFullYear();
   const m = String(x.getMonth() + 1).padStart(2, '0');
@@ -6343,8 +6325,7 @@ function parseISODate(s) {
 function daysUntil(isoDate) {
   const target = parseISODate(isoDate);
   if (!target) return Infinity;
-  const today = startOfDay();
-  return Math.round((startOfDay(target) - today) / 86400000);
+  return Math.round((startOfDay(target) - startOfDay()) / 86400000);
 }
 function fmtDate(isoOrDate) {
   const d = typeof isoOrDate === 'string' ? parseISODate(isoOrDate) : isoOrDate;
@@ -6368,9 +6349,6 @@ function relativePast(date) {
   return `${Math.floor(n / 30)}mo ago`;
 }
 
-/* ----------------------------------------------------------------------------
-   Status model
----------------------------------------------------------------------------- */
 function itemStatus(item) {
   const n = daysUntil(item.expiry);
   if (n < 0) return 'expired';
@@ -6379,22 +6357,14 @@ function itemStatus(item) {
 }
 const STATUS_LABEL = { fresh: 'Fresh', soon: 'Use soon', expired: 'Expired' };
 
-/* Estimate the monetary value of a quantity using the catalog cost. */
 function estimateCost(name, qty) {
   const cat = CATALOG_BY_NAME.get(norm(name));
   if (!cat) return 0;
   return Math.max(0, (Number(qty) || 0) * cat.cost);
 }
 
-/* ----------------------------------------------------------------------------
-   Seed data — believable starting state so the app feels alive on first load.
-   Dates are computed relative to "today" the first time the app runs, then
-   frozen in localStorage (like real data would be).
----------------------------------------------------------------------------- */
 function buildSeed() {
   const today = startOfDay();
-
-  // [name, qty, unit, expiryOffsetDays, purchaseOffsetDays]
   const pantryPlan = [
     ['spinach', 1, 'cup', -2, -7],
     ['chicken breast', 2, 'pcs', -1, -3],
@@ -6415,7 +6385,6 @@ function buildSeed() {
     ['pasta', 400, 'g', 500, -230],
     ['olive oil', 12, 'tbsp', 400, -140],
   ];
-
   const pantry = pantryPlan.map(([name, qty, unit, exp, pur]) => {
     const cat = CATALOG_BY_NAME.get(name);
     return {
@@ -6429,7 +6398,6 @@ function buildSeed() {
     };
   });
 
-  // [name, qty, unit, reason, daysAgo]
   const wastePlan = [
     ['lettuce', 1, 'cup', 'Forgot about it', 41],
     ['strawberry', 1, 'cup', 'Went moldy', 34],
@@ -6440,7 +6408,6 @@ function buildSeed() {
     ['chicken thigh', 2, 'pcs', 'Forgot to cook', 6],
     ['yogurt', 1, 'cup', 'Expired', 3],
   ];
-
   const waste = wastePlan.map(([name, qty, unit, reason, ago]) => ({
     id: uid(),
     name,
@@ -6454,16 +6421,12 @@ function buildSeed() {
   return { pantry, waste, shopping: [] };
 }
 
-/* ----------------------------------------------------------------------------
-   State + persistence
----------------------------------------------------------------------------- */
 let state = null;
 
 function defaultState() {
   const seed = buildSeed();
   return {
     version: SCHEMA_VERSION,
-    theme: null, // null => follow system
     pantry: seed.pantry,
     waste: seed.waste,
     shopping: seed.shopping,
@@ -6479,16 +6442,13 @@ function loadState() {
       return fresh;
     }
     const parsed = JSON.parse(raw);
-    // Defensive defaults in case of a partial/older payload.
     return {
       version: SCHEMA_VERSION,
-      theme: parsed.theme ?? null,
       pantry: Array.isArray(parsed.pantry) ? parsed.pantry : [],
       waste: Array.isArray(parsed.waste) ? parsed.waste : [],
       shopping: Array.isArray(parsed.shopping) ? parsed.shopping : [],
     };
   } catch (err) {
-    console.warn('Could not read saved data, starting fresh.', err);
     const fresh = defaultState();
     persist(fresh);
     return fresh;
@@ -6499,26 +6459,18 @@ function persist(s = state) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
   } catch (err) {
-    console.warn('Could not save data.', err);
     toast('Storage is full or unavailable — changes may not persist.', 'error');
   }
 }
 const save = () => persist(state);
 
-/* ----------------------------------------------------------------------------
-   UI (ephemeral) state — filters, current tab, etc. Not persisted.
----------------------------------------------------------------------------- */
 const ui = {
   tab: 'pantry',
   firstPaint: true,
   pantry: { search: '', status: 'all', sort: 'expiry', category: 'all' },
   recipes: { search: '', diets: new Set(), maxMissing: 5, maxTime: 0, expiringOnly: false },
 };
-const MAX_MISSING_CAP = 12; // slider max; treated as "Any"
 
-/* ----------------------------------------------------------------------------
-   Toasts
----------------------------------------------------------------------------- */
 let toastSeq = 0;
 function toast(message, kind = 'info', timeout = 3600) {
   const root = $('#toasts');
@@ -6535,7 +6487,7 @@ function toast(message, kind = 'info', timeout = 3600) {
   root.appendChild(node);
   const close = () => {
     node.classList.add('toast--leaving');
-    setTimeout(() => node.remove(), 220);
+    setTimeout(() => node.remove(), 240);
   };
   node.querySelector('.toast__close').addEventListener('click', close);
   if (timeout) setTimeout(close, timeout);
@@ -6546,9 +6498,6 @@ function toastIcon(kind) {
   return ICONS.info;
 }
 
-/* ----------------------------------------------------------------------------
-   Inline SVG icon set (kept tiny and consistent, stroke-based)
----------------------------------------------------------------------------- */
 const ICONS = {
   x: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
   check: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>',
@@ -6558,30 +6507,21 @@ const ICONS = {
   edit: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
   trash: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>',
   toss: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m5 0V4h4v2"/><path d="M9.5 11.5 12 14m0 0 2.5 2.5M12 14l2.5-2.5M12 14l-2.5 2.5"/></svg>',
-  sun: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
-  moon: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>',
   cart: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h2.2l2.2 12.4a2 2 0 0 0 2 1.6h8.7a2 2 0 0 0 2-1.6L22 7H5.2"/></svg>',
-  menu: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg>',
   download: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-5 5 5 5-5m-5 5V3"/></svg>',
   upload: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-7 5-5 5 5m-5-5v12"/></svg>',
   reset: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8m0-5v5h5"/></svg>',
   clock: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
   people: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="3.2"/><path d="M22 21v-2a4 4 0 0 0-3-3.8"/><path d="M16 3.2A4 4 0 0 1 16 11"/></svg>',
   gauge: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14 8 9"/><path d="M3.5 18a9 9 0 1 1 17 0Z"/></svg>',
-  spark: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 9.2 8.6 2 9.3l5.5 4.8L5.7 21 12 17.3 18.3 21l-1.8-6.9L22 9.3l-7.2-.7Z"/></svg>',
   pantry: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 6h.01M10 12h.01M10 18h.01"/></svg>',
   book: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>',
   chart: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg>',
-  leaf: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 4 13c0-5 4.5-9 16-9 0 8-4 16-13 16Z"/><path d="M4 21c2-6 6-9 12-10"/></svg>',
 };
 
-/* ============================================================================
-   PANTRY VIEW
-   ========================================================================== */
 function sortedPantry() {
   let items = state.pantry.slice();
   const f = ui.pantry;
-
   if (f.search) {
     const q = norm(f.search);
     items = items.filter((it) => norm(it.name).includes(q) || norm(it.category).includes(q));
@@ -6596,7 +6536,6 @@ function sortedPantry() {
       const d = order[itemStatus(a)] - order[itemStatus(b)];
       return d !== 0 ? d : daysUntil(a.expiry) - daysUntil(b.expiry);
     }
-    // default: soonest expiry first
     return daysUntil(a.expiry) - daysUntil(b.expiry);
   });
   return items;
@@ -6609,7 +6548,6 @@ function renderPantry() {
   const counts = { fresh: 0, soon: 0, expired: 0 };
   state.pantry.forEach((it) => { counts[itemStatus(it)]++; });
   const total = state.pantry.length;
-
   const items = sortedPantry();
 
   const statusChips = [['all', 'All'], ['fresh', 'Fresh'], ['soon', 'Use soon'], ['expired', 'Expired']]
@@ -6624,9 +6562,9 @@ function renderPantry() {
 
   view.innerHTML = `
     <header class="view__head">
-      <div>
+      <div class="view__head-text">
         <h1 class="view__title">Pantry</h1>
-        <p class="view__sub">${total} item${total === 1 ? '' : 's'} tracked · <span class="text-soon">${counts.soon} to use soon</span> · <span class="text-expired">${counts.expired} expired</span></p>
+        <p class="view__sub">${total} item${total === 1 ? '' : 's'} tracked${counts.soon ? ` · <span class="text-soon">${counts.soon} to use soon</span>` : ''}${counts.expired ? ` · <span class="text-expired">${counts.expired} expired</span>` : ''}</p>
       </div>
       <button class="btn btn--primary" data-action="add-item">${ICONS.plus}<span>Add item</span></button>
     </header>
@@ -6662,27 +6600,27 @@ function renderPantry() {
     ${items.length ? '' : pantryEmptyState(total)}
   `;
 
-  // Stagger entrance for the freshly rendered cards.
   staggerIn($$('#items-grid .item-card'));
 }
 
 function summaryCard(label, value, kind) {
   return `
     <div class="summary__item summary__item--${kind}" role="listitem">
-      <span class="summary__dot status-dot status-dot--${kind}"></span>
+      <span class="summary__top">
+        <span class="summary__dot status-dot status-dot--${kind}"></span>
+        <span class="summary__label">${label}</span>
+      </span>
       <span class="summary__value">${value}</span>
-      <span class="summary__label">${label}</span>
     </div>`;
 }
 
 function itemCard(it) {
   const status = itemStatus(it);
-  const cat = CATALOG_BY_NAME.get(norm(it.name));
   return `
     <article class="item-card item-card--${status}" data-id="${it.id}">
-      <div class="item-card__bar"></div>
-      <div class="item-card__body">
-        <div class="item-card__top">
+      <span class="item-card__bar" aria-hidden="true"></span>
+      <div class="item-card__main">
+        <div class="item-card__head">
           <h3 class="item-card__name">${escapeHtml(titleCase(it.name))}</h3>
           <span class="badge badge--${status}">${STATUS_LABEL[status]}</span>
         </div>
@@ -6692,13 +6630,13 @@ function itemCard(it) {
         </div>
         <div class="item-card__expiry">
           <span class="item-card__expiry-icon" aria-hidden="true">${ICONS.clock}</span>
-          <span>Expires <strong>${relativeExpiry(it.expiry)}</strong> · ${fmtDate(it.expiry)}</span>
+          <span>Expires <strong>${relativeExpiry(it.expiry)}</strong><span class="item-card__date"> · ${fmtDate(it.expiry)}</span></span>
         </div>
-      </div>
-      <div class="item-card__actions">
-        <button class="icon-btn icon-btn--sm" data-action="edit-item" data-id="${it.id}" title="Edit" aria-label="Edit ${escapeHtml(it.name)}">${ICONS.edit}</button>
-        <button class="icon-btn icon-btn--sm" data-action="toss-item" data-id="${it.id}" title="Throw out (log waste)" aria-label="Throw out ${escapeHtml(it.name)}">${ICONS.toss}</button>
-        <button class="icon-btn icon-btn--sm icon-btn--danger" data-action="delete-item" data-id="${it.id}" title="Remove" aria-label="Remove ${escapeHtml(it.name)}">${ICONS.trash}</button>
+        <div class="item-card__actions">
+          <button class="icon-btn icon-btn--sm" data-action="edit-item" data-id="${it.id}" title="Edit" aria-label="Edit ${escapeHtml(it.name)}">${ICONS.edit}</button>
+          <button class="icon-btn icon-btn--sm" data-action="toss-item" data-id="${it.id}" title="Throw out (log waste)" aria-label="Throw out ${escapeHtml(it.name)}">${ICONS.toss}</button>
+          <button class="icon-btn icon-btn--sm icon-btn--danger" data-action="delete-item" data-id="${it.id}" title="Remove" aria-label="Remove ${escapeHtml(it.name)}">${ICONS.trash}</button>
+        </div>
       </div>
     </article>`;
 }
@@ -6714,9 +6652,6 @@ function pantryEmptyState(total) {
     '<button class="btn btn--secondary" data-action="clear-pantry-filters">Clear filters</button>');
 }
 
-/* ============================================================================
-   ADD / EDIT ITEM  (modal form)
-   ========================================================================== */
 function openItemForm(itemId) {
   const editing = itemId ? state.pantry.find((p) => p.id === itemId) : null;
   const today = toISODate(new Date());
@@ -6724,7 +6659,6 @@ function openItemForm(itemId) {
   const datalist = '<datalist id="ingredient-list">' +
     INGREDIENT_CATALOG.map((c) => `<option value="${escapeHtml(titleCase(c.name))}"></option>`).join('') +
     '</datalist>';
-
   const unitOpts = UNIT_OPTIONS.map((u) => `<option value="${u}">${u}</option>`).join('');
   const categoryOpts = CATEGORIES.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
 
@@ -6737,7 +6671,6 @@ function openItemForm(itemId) {
                placeholder="e.g. Tomatoes" required value="${editing ? escapeHtml(titleCase(editing.name)) : ''}">
         <p class="field__hint" id="if-name-hint"></p>
       </div>
-
       <div class="form__row">
         <div class="field field--sm">
           <label class="field__label" for="if-qty">Quantity</label>
@@ -6753,7 +6686,6 @@ function openItemForm(itemId) {
           <select class="select" id="if-category" name="category">${categoryOpts}</select>
         </div>
       </div>
-
       <div class="form__row">
         <div class="field">
           <label class="field__label" for="if-purchase">Purchase date</label>
@@ -6773,7 +6705,6 @@ function openItemForm(itemId) {
 
   openModal({ title: editing ? 'Edit item' : 'Add an item', body, footer, size: 'sm' });
 
-  const form = $('#item-form');
   const nameEl = $('#if-name');
   const unitEl = $('#if-unit');
   const catEl = $('#if-category');
@@ -6782,13 +6713,11 @@ function openItemForm(itemId) {
   const nameHint = $('#if-name-hint');
   const expiryHint = $('#if-expiry-hint');
 
-  // Pre-fill selects for editing.
   if (editing) {
     unitEl.value = editing.unit;
     catEl.value = editing.category;
   }
 
-  // Autocomplete-driven smart defaults from the ingredient catalog.
   const applyCatalogDefaults = (force = false) => {
     const cat = CATALOG_BY_NAME.get(norm(nameEl.value));
     if (!cat) { nameHint.textContent = ''; return; }
@@ -6808,7 +6737,6 @@ function openItemForm(itemId) {
     nameHint.textContent = cat ? `Recognised · ${cat.category}` : '';
   });
   purchaseEl.addEventListener('change', () => {
-    // Re-suggest expiry if the item is recognised and we're not editing a custom date.
     const cat = CATALOG_BY_NAME.get(norm(nameEl.value));
     if (cat && !editing) {
       const base = parseISODate(purchaseEl.value) || new Date();
@@ -6818,20 +6746,16 @@ function openItemForm(itemId) {
 
   if (!editing) setTimeout(() => nameEl.focus(), 60);
 
-  form.addEventListener('submit', (e) => {
+  $('#item-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const name = norm(nameEl.value);
     const qty = parseFloat($('#if-qty').value);
     const expiry = expiryEl.value;
 
-    // Validation with inline feedback.
     let ok = true;
-    if (!name) { markInvalid(nameEl, nameHint, 'Please enter an item name.'); ok = false; }
-    else clearInvalid(nameEl);
-    if (!(qty > 0)) { markInvalid($('#if-qty'), null, ''); ok = false; }
-    else clearInvalid($('#if-qty'));
-    if (!expiry) { markInvalid(expiryEl, expiryHint, 'An expiry date is required.'); ok = false; }
-    else clearInvalid(expiryEl);
+    if (!name) { markInvalid(nameEl, nameHint, 'Please enter an item name.'); ok = false; } else clearInvalid(nameEl);
+    if (!(qty > 0)) { markInvalid($('#if-qty'), null, ''); ok = false; } else clearInvalid($('#if-qty'));
+    if (!expiry) { markInvalid(expiryEl, expiryHint, 'An expiry date is required.'); ok = false; } else clearInvalid(expiryEl);
     if (!ok) return;
 
     const payload = {
@@ -6866,7 +6790,6 @@ function clearInvalid(el) {
   el.removeAttribute('aria-invalid');
 }
 
-/* Pantry item actions */
 function deleteItem(id) {
   const it = state.pantry.find((p) => p.id === id);
   if (!it) return;
@@ -6887,7 +6810,6 @@ function deleteItem(id) {
 function tossItem(id) {
   const it = state.pantry.find((p) => p.id === id);
   if (!it) return;
-  // Log as waste, then remove from pantry.
   state.waste.push({
     id: uid(),
     name: it.name,
@@ -6904,11 +6826,7 @@ function tossItem(id) {
   toast(`Logged ${titleCase(it.name)} as waste.`, 'info');
 }
 
-/* ============================================================================
-   RECIPE MATCHING ENGINE
-   ========================================================================== */
 function pantryMatchMap() {
-  // name -> { item, status }
   const m = new Map();
   state.pantry.forEach((it) => m.set(norm(it.name), { item: it, status: itemStatus(it) }));
   return m;
@@ -6919,24 +6837,17 @@ function scoreRecipe(recipe, pmap) {
   const have = [];
   const missing = [];
   const expiringUsed = [];
-
   recipe.ingredients.forEach((ing) => {
     const hit = pmap.get(norm(ing.name));
     if (hit) {
       have.push(ing);
-      if (hit.status === 'soon' || hit.status === 'expired') {
-        expiringUsed.push({ ing, status: hit.status });
-      }
+      if (hit.status === 'soon' || hit.status === 'expired') expiringUsed.push({ ing, status: hit.status });
     } else {
       missing.push(ing);
     }
   });
-
   const coverage = total ? have.length / total : 0;
-  // Composite score used for ranking: coverage dominates, expiring usage breaks
-  // ties and gently promotes "use-it-first" recipes.
   const score = coverage + Math.min(expiringUsed.length, 4) * 0.12;
-
   return { recipe, total, have, missing, expiringUsed, coverage, score };
 }
 
@@ -6952,9 +6863,7 @@ function matchedRecipes() {
       m.recipe.ingredients.some((i) => norm(i.name).includes(q)) ||
       m.recipe.tags.some((t) => norm(t).includes(q)));
   }
-  if (f.diets.size) {
-    results = results.filter((m) => Array.from(f.diets).every((t) => m.recipe.tags.includes(t)));
-  }
+  if (f.diets.size) results = results.filter((m) => Array.from(f.diets).every((t) => m.recipe.tags.includes(t)));
   if (f.maxTime > 0) results = results.filter((m) => m.recipe.time <= f.maxTime);
   if (f.maxMissing < MAX_MISSING_CAP) results = results.filter((m) => m.missing.length <= f.maxMissing);
   if (f.expiringOnly) results = results.filter((m) => m.expiringUsed.length > 0);
@@ -6967,9 +6876,6 @@ function matchedRecipes() {
   return results;
 }
 
-/* ============================================================================
-   RECIPES VIEW
-   ========================================================================== */
 function renderRecipes() {
   const view = $('#view-recipes');
   if (!view) return;
@@ -6977,16 +6883,14 @@ function renderRecipes() {
 
   const dietChips = DIET_TAGS.map((t) => `
     <button class="chip ${f.diets.has(t) ? 'is-active' : ''}" data-diet="${t}">${titleCase(t)}</button>`).join('');
-
   const timeChips = [[0, 'Any time'], [15, '≤ 15 min'], [30, '≤ 30 min'], [45, '≤ 45 min'], [60, '≤ 60 min']]
     .map(([val, label]) => `
       <button class="chip ${f.maxTime === val ? 'is-active' : ''}" data-time="${val}">${label}</button>`).join('');
-
   const missingLabel = f.maxMissing >= MAX_MISSING_CAP ? 'Any' : f.maxMissing;
 
   view.innerHTML = `
     <header class="view__head">
-      <div>
+      <div class="view__head-text">
         <h1 class="view__title">Recipes</h1>
         <p class="view__sub">Ranked by what you already have — recipes using soon-to-expire items rise to the top.</p>
       </div>
@@ -6999,22 +6903,18 @@ function renderRecipes() {
         <input class="input" type="search" id="recipe-search" placeholder="Search recipes or ingredients…"
                value="${escapeHtml(f.search)}" aria-label="Search recipes">
       </div>
-
       <div class="filters__group">
         <span class="filters__label">Dietary</span>
         <div class="chips">${dietChips}</div>
       </div>
-
       <div class="filters__group">
         <span class="filters__label">Cook time</span>
         <div class="chips">${timeChips}</div>
       </div>
-
       <div class="filters__group filters__group--range">
-        <label class="filters__label" for="recipe-missing">Max missing ingredients · <strong id="missing-val">${missingLabel}</strong></label>
+        <label class="filters__label" for="recipe-missing">Max missing · <strong id="missing-val">${missingLabel}</strong></label>
         <input class="range" type="range" id="recipe-missing" min="0" max="${MAX_MISSING_CAP}" step="1" value="${f.maxMissing}">
       </div>
-
       <label class="switch">
         <input type="checkbox" id="recipe-expiring" ${f.expiringOnly ? 'checked' : ''}>
         <span class="switch__track"><span class="switch__thumb"></span></span>
@@ -7034,11 +6934,10 @@ function paintRecipeResults() {
   const meta = $('#recipes-meta');
   if (!grid) return;
 
-  // Skeleton shimmer only on the first visit for a polished "loading" beat.
   if (ui.firstPaint) {
     grid.innerHTML = Array.from({ length: 6 }).map(recipeSkeleton).join('');
     meta.innerHTML = '';
-    setTimeout(() => { ui.firstPaint = false; paintRecipeResults(); }, 420);
+    setTimeout(() => { ui.firstPaint = false; paintRecipeResults(); }, 440);
     return;
   }
 
@@ -7074,22 +6973,18 @@ function recipeCard(m) {
         </div>
         ${coverageRing(pct)}
       </div>
-
       ${m.expiringUsed.length ? `<div class="use-first"><span class="use-first__dot"></span>Uses ${m.expiringUsed.length} expiring item${m.expiringUsed.length === 1 ? '' : 's'}</div>` : ''}
-
       <div class="recipe-card__meta">
         <span class="meta__item">${ICONS.clock}${r.time} min</span>
         <span class="meta__item">${ICONS.people}${r.servings} serv</span>
         <span class="meta__item">${ICONS.gauge}${r.difficulty}</span>
       </div>
-
       <div class="recipe-card__have">
         <strong>${m.have.length}/${m.total}</strong> ingredients on hand
         ${m.missing.length
       ? `<span class="recipe-card__missing">· need ${missingPreview.join(', ')}${moreMissing > 0 ? ` +${moreMissing}` : ''}</span>`
       : '<span class="recipe-card__ready">· ready to cook</span>'}
       </div>
-
       <div class="recipe-card__foot">
         <button class="btn btn--secondary btn--sm" data-action="view-recipe" data-recipe="${escapeHtml(r.name)}">View recipe</button>
       </div>
@@ -7104,8 +6999,8 @@ function coverageRing(pct) {
   return `
     <div class="ring ring--${tone}" role="img" aria-label="${pct}% match">
       <svg viewBox="0 0 56 56" width="56" height="56">
-        <circle class="ring__bg" cx="28" cy="28" r="${r}" fill="none" stroke-width="6"/>
-        <circle class="ring__fg" cx="28" cy="28" r="${r}" fill="none" stroke-width="6"
+        <circle class="ring__bg" cx="28" cy="28" r="${r}" fill="none" stroke-width="5"/>
+        <circle class="ring__fg" cx="28" cy="28" r="${r}" fill="none" stroke-width="5"
                 stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" stroke-linecap="round"
                 transform="rotate(-90 28 28)"/>
       </svg>
@@ -7117,7 +7012,7 @@ function recipeSkeleton() {
   return `
     <div class="recipe-card recipe-card--skeleton" aria-hidden="true">
       <div class="recipe-card__head">
-        <div style="flex:1">
+        <div class="sk-grow">
           <div class="sk sk--title"></div>
           <div class="sk sk--tags"></div>
         </div>
@@ -7129,10 +7024,7 @@ function recipeSkeleton() {
     </div>`;
 }
 
-/* ============================================================================
-   RECIPE MODAL + COOK MODE
-   ========================================================================== */
-let cookState = null; // { recipeName, step }
+let cookState = null;
 
 function openRecipe(recipeName) {
   const recipe = SEED_RECIPES.find((r) => r.name === recipeName);
@@ -7145,7 +7037,6 @@ function renderRecipeModal(recipe) {
   const pmap = pantryMatchMap();
   const m = scoreRecipe(recipe, pmap);
   const pct = Math.round(m.coverage * 100);
-
   const haveNames = new Set(m.have.map((i) => norm(i.name)));
 
   const ingredientRows = recipe.ingredients.map((ing) => {
@@ -7155,9 +7046,7 @@ function renderRecipeModal(recipe) {
     return `
       <li class="ing ${has ? 'ing--have' : 'ing--missing'}">
         <span class="ing__check" aria-hidden="true">${has ? ICONS.check : ICONS.plus}</span>
-        <span class="ing__name">${escapeHtml(titleCase(ing.name))}
-          ${isExpiring ? `<span class="ing__flag">use soon</span>` : ''}
-        </span>
+        <span class="ing__name">${escapeHtml(titleCase(ing.name))}${isExpiring ? '<span class="ing__flag">use soon</span>' : ''}</span>
         <span class="ing__qty">${escapeHtml(fmtQty(ing.qty))} ${escapeHtml(ing.unit)}</span>
       </li>`;
   }).join('');
@@ -7184,7 +7073,6 @@ function renderRecipeModal(recipe) {
           </div>
         </div>
       </div>
-
       <div class="recipe-detail__cols">
         <section class="recipe-detail__col">
           <h4 class="recipe-detail__h">Ingredients</h4>
@@ -7224,13 +7112,10 @@ function renderCookMode() {
 
   const body = `
     <div class="cook">
-      <div class="cook__progress">
-        <div class="cook__progress-bar" style="width:${progress}%"></div>
-      </div>
+      <div class="cook__progress"><div class="cook__progress-bar" style="width:${progress}%"></div></div>
       <p class="cook__counter">Step ${i + 1} of ${total}</p>
       <div class="cook__step-num">${i + 1}</div>
       <p class="cook__text">${escapeHtml(recipe.steps[i])}</p>
-
       <ul class="cook__dots" role="tablist" aria-label="Recipe steps">
         ${recipe.steps.map((_, idx) => `<li class="cook__dot ${idx === i ? 'is-active' : ''} ${idx < i ? 'is-done' : ''}" data-cook-jump="${idx}" role="tab" aria-selected="${idx === i}"></li>`).join('')}
       </ul>
@@ -7265,7 +7150,6 @@ function cookRecipe(recipeName) {
   const recipe = SEED_RECIPES.find((r) => r.name === recipeName);
   if (!recipe) return;
 
-  // Work out exactly what will be deducted so we can show a transparent confirm.
   const plan = [];
   recipe.ingredients.forEach((ing) => {
     const item = state.pantry.find((p) => norm(p.name) === norm(ing.name));
@@ -7302,11 +7186,8 @@ function cookRecipe(recipeName) {
     let changed = 0;
     plan.forEach((p) => {
       if (!p.tracked) return;
-      if (p.removed) {
-        state.pantry = state.pantry.filter((x) => x.id !== p.item.id);
-      } else {
-        p.item.qty = Math.max(0, p.after);
-      }
+      if (p.removed) state.pantry = state.pantry.filter((x) => x.id !== p.item.id);
+      else p.item.qty = Math.max(0, p.after);
       changed++;
     });
     save();
@@ -7319,9 +7200,6 @@ function cookRecipe(recipeName) {
   });
 }
 
-/* ============================================================================
-   SHOPPING LIST (drawer)
-   ========================================================================== */
 function addMissingToShopping(recipeName) {
   const recipe = SEED_RECIPES.find((r) => r.name === recipeName);
   if (!recipe) return;
@@ -7340,7 +7218,7 @@ function addShoppingItem(name, qty, unit, source) {
   const existing = state.shopping.find((s) => norm(s.name) === key && s.unit === unit);
   if (existing) {
     existing.qty = +(existing.qty + (Number(qty) || 0)).toFixed(2);
-    return false; // merged, not newly added
+    return false;
   }
   state.shopping.push({ id: uid(), name: norm(name), qty: +(Number(qty) || 1).toFixed(2), unit, checked: false, source: source || '' });
   return true;
@@ -7357,21 +7235,20 @@ function renderShopping() {
       ${list.map((s) => `
         <li class="shopping-item ${s.checked ? 'is-checked' : ''}" data-id="${s.id}">
           <label class="checkbox">
-            <input type="checkbox" data-shop-toggle="${s.id}" ${s.checked ? 'checked' : ''}>
+            <input type="checkbox" data-shop-toggle="${s.id}" ${s.checked ? 'checked' : ''} aria-label="Mark ${escapeHtml(s.name)} bought">
             <span class="checkbox__box">${ICONS.check}</span>
           </label>
           <span class="shopping-item__name">${escapeHtml(titleCase(s.name))}</span>
           <span class="shopping-item__qty">${escapeHtml(fmtQty(s.qty))} ${escapeHtml(s.unit)}</span>
           <button class="icon-btn icon-btn--sm" data-shop-remove="${s.id}" aria-label="Remove ${escapeHtml(s.name)}">${ICONS.x}</button>
         </li>`).join('')}
-    </ul>` : emptyState(ICONS.cart, 'Your list is empty',
-    'Open a recipe and add its missing ingredients here.', '');
+    </ul>` : emptyState(ICONS.cart, 'Your list is empty', 'Open a recipe and add its missing ingredients here.', '');
 
   panel.innerHTML = `
     <div class="drawer__scroll">${body}</div>
     ${list.length ? `
     <div class="drawer__foot">
-      <button class="btn btn--secondary btn--sm" data-action="shop-to-pantry" ${checkedCount ? '' : 'disabled'}>Move ${checkedCount || ''} checked to pantry</button>
+      <button class="btn btn--primary btn--sm" data-action="shop-to-pantry" ${checkedCount ? '' : 'disabled'}>Move ${checkedCount || ''} checked to pantry</button>
       <div class="drawer__foot-row">
         <button class="btn btn--ghost btn--sm" data-action="shop-clear-checked" ${checkedCount ? '' : 'disabled'}>Clear checked</button>
         <button class="btn btn--ghost btn--sm" data-action="shop-clear-all">Clear all</button>
@@ -7404,9 +7281,6 @@ function moveCheckedToPantry() {
   toast(`Moved ${checked.length} item${checked.length === 1 ? '' : 's'} into your pantry.`, 'success');
 }
 
-/* ============================================================================
-   WASTE + STATS VIEW
-   ========================================================================== */
 function renderStats() {
   const view = $('#view-stats');
   if (!view) return;
@@ -7423,10 +7297,8 @@ function renderStats() {
   const thisMonth = waste.filter((w) => monthKey(w.date) === thisMonthKey).reduce((s, w) => s + w.cost, 0);
   const lastMonth = waste.filter((w) => monthKey(w.date) === lastMonthKey).reduce((s, w) => s + w.cost, 0);
   const delta = lastMonth > 0 ? Math.round(((thisMonth - lastMonth) / lastMonth) * 100) : null;
-
   const expiringNow = state.pantry.filter((it) => itemStatus(it) !== 'fresh').length;
 
-  // Aggregate "most wasted" by name.
   const byName = new Map();
   waste.forEach((w) => {
     const k = norm(w.name);
@@ -7439,8 +7311,8 @@ function renderStats() {
 
   view.innerHTML = `
     <header class="view__head">
-      <div>
-        <h1 class="view__title">Waste & insights</h1>
+      <div class="view__head-text">
+        <h1 class="view__title">Waste &amp; insights</h1>
         <p class="view__sub">What slipped through — so less does next time.</p>
       </div>
       <button class="btn btn--primary" data-action="log-waste">${ICONS.plus}<span>Log waste</span></button>
@@ -7461,7 +7333,6 @@ function renderStats() {
         </div>
         <div id="trend-chart" class="chart"></div>
       </section>
-
       <section class="card">
         <div class="card__head"><h3 class="card__title">Most wasted</h3></div>
         ${mostWasted.length ? `<ul class="bars">
@@ -7471,7 +7342,7 @@ function renderStats() {
               <span class="bar-row__track"><span class="bar-row__fill" style="width:${Math.max(6, Math.round((x.cost / maxCost) * 100))}%"></span></span>
               <span class="bar-row__val">${USD.format(x.cost)}<small>·${x.count}×</small></span>
             </li>`).join('')}
-        </ul>` : `<p class="muted card__empty">Nothing logged yet — that's a good thing.</p>`}
+        </ul>` : '<p class="muted card__empty">Nothing logged yet — and that is a good thing.</p>'}
       </section>
     </div>
 
@@ -7519,11 +7390,9 @@ function deltaTone(delta) {
   return delta > 0 ? 'warn' : 'good';
 }
 
-/* Build weekly buckets (last 8 weeks incl. current) and draw an SVG area chart. */
 function weeklyWasteBuckets(weeks = 8) {
   const today = startOfDay();
-  // anchor to the start of the current week (Monday)
-  const dow = (today.getDay() + 6) % 7; // 0 = Monday
+  const dow = (today.getDay() + 6) % 7;
   const weekStart = addDays(today, -dow);
   const buckets = [];
   for (let i = weeks - 1; i >= 0; i--) {
@@ -7555,7 +7424,6 @@ function drawTrendChart() {
   const linePts = data.map((d, i) => `${x(i).toFixed(1)},${y(d.total).toFixed(1)}`).join(' ');
   const areaPts = `${padL},${(padT + innerH).toFixed(1)} ${linePts} ${(padL + innerW).toFixed(1)},${(padT + innerH).toFixed(1)}`;
 
-  // y gridlines / labels (5 ticks)
   const ticks = 4;
   let grid = '';
   for (let t = 0; t <= ticks; t++) {
@@ -7568,13 +7436,13 @@ function drawTrendChart() {
   const xlabels = data.map((d, i) => `<text class="chart__xtick" x="${x(i).toFixed(1)}" y="${H - 10}" text-anchor="middle">${escapeHtml(d.label)}</text>`).join('');
   const dots = data.map((d, i) => `
     <circle class="chart__dot" cx="${x(i).toFixed(1)}" cy="${y(d.total).toFixed(1)}" r="4"
-            data-i="${i}" data-label="${escapeHtml(d.label)}" data-val="${d.total.toFixed(2)}"></circle>`).join('');
+            data-i="${i}" data-label="${escapeHtml(d.label)}" data-val="${d.total.toFixed(2)}" tabindex="0"></circle>`).join('');
 
   host.innerHTML = `
     <svg class="chart__svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Weekly money wasted, last 8 weeks">
       <defs>
         <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.28"/>
+          <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.32"/>
           <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
         </linearGradient>
       </defs>
@@ -7585,7 +7453,6 @@ function drawTrendChart() {
       ${xlabels}
     </svg>`;
 
-  // Hover readout
   const readout = $('#chart-readout');
   const total = data.reduce((s, d) => s + d.total, 0);
   if (readout) readout.textContent = `${USD.format(total)} over 8 weeks`;
@@ -7597,7 +7464,6 @@ function drawTrendChart() {
     };
     dot.addEventListener('mouseenter', show);
     dot.addEventListener('focus', show);
-    dot.setAttribute('tabindex', '0');
   });
   host.addEventListener('mouseleave', () => {
     host.querySelectorAll('.chart__dot').forEach((d) => d.classList.remove('is-active'));
@@ -7605,7 +7471,6 @@ function drawTrendChart() {
   });
 }
 
-/* Log-waste form (modal) */
 function openWasteForm() {
   const datalist = '<datalist id="ingredient-list-waste">' +
     INGREDIENT_CATALOG.map((c) => `<option value="${escapeHtml(titleCase(c.name))}"></option>`).join('') +
@@ -7698,9 +7563,6 @@ function deleteWaste(id) {
   toast('Removed log entry.', 'info');
 }
 
-/* ============================================================================
-   EXPORT / IMPORT / RESET
-   ========================================================================== */
 function exportData() {
   const payload = {
     app: 'PantryPilot',
@@ -7709,7 +7571,6 @@ function exportData() {
     pantry: state.pantry,
     waste: state.waste,
     shopping: state.shopping,
-    theme: state.theme,
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -7728,22 +7589,15 @@ function importData(file) {
   reader.onload = () => {
     try {
       const data = JSON.parse(reader.result);
-      if (!data || (!Array.isArray(data.pantry) && !Array.isArray(data.waste))) {
-        throw new Error('Unrecognised file');
-      }
+      if (!data || (!Array.isArray(data.pantry) && !Array.isArray(data.waste))) throw new Error('Unrecognised file');
       state.pantry = Array.isArray(data.pantry) ? data.pantry : [];
       state.waste = Array.isArray(data.waste) ? data.waste : [];
       state.shopping = Array.isArray(data.shopping) ? data.shopping : [];
-      if (data.theme === 'light' || data.theme === 'dark' || data.theme === null) {
-        state.theme = data.theme;
-        applyTheme();
-      }
       save();
       renderAll();
       updateBadges();
       toast('Imported your data successfully.', 'success');
     } catch (err) {
-      console.warn(err);
       toast('That file could not be read as PantryPilot data.', 'error');
     }
   };
@@ -7771,37 +7625,6 @@ function resetData() {
   });
 }
 
-/* ============================================================================
-   THEME
-   ========================================================================== */
-function systemPrefersDark() {
-  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-}
-function effectiveTheme() {
-  if (state.theme === 'light' || state.theme === 'dark') return state.theme;
-  return systemPrefersDark() ? 'dark' : 'light';
-}
-function applyTheme() {
-  const t = effectiveTheme();
-  document.documentElement.setAttribute('data-theme', t);
-  const btn = $('#theme-toggle');
-  if (btn) {
-    btn.innerHTML = t === 'dark' ? ICONS.sun : ICONS.moon;
-    btn.setAttribute('aria-label', t === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
-    btn.title = t === 'dark' ? 'Light theme' : 'Dark theme';
-  }
-  const meta = $('#theme-color');
-  if (meta) meta.setAttribute('content', t === 'dark' ? '#16140f' : '#fbfaf7');
-}
-function toggleTheme() {
-  state.theme = effectiveTheme() === 'dark' ? 'light' : 'dark';
-  save();
-  applyTheme();
-}
-
-/* ============================================================================
-   SHARED UI: empty states, search icon, stagger, modal, drawer, confirm
-   ========================================================================== */
 function searchIcon() {
   return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>';
 }
@@ -7825,7 +7648,6 @@ function staggerIn(nodes) {
   });
 }
 
-/* ---- Modal infrastructure (single reusable modal) ---- */
 let lastFocused = null;
 function openModal({ title, body, footer, size = 'md' }) {
   const root = $('#modal');
@@ -7843,7 +7665,6 @@ function openModal({ title, body, footer, size = 'md' }) {
     </div>`;
   root.classList.add('is-open');
   document.body.classList.add('no-scroll');
-  // focus first focusable
   requestAnimationFrame(() => {
     const f = root.querySelector('input, select, textarea, button:not([data-close-modal])') || root.querySelector('[data-close-modal]');
     if (f) f.focus();
@@ -7859,7 +7680,6 @@ function closeModal() {
   if (lastFocused && document.contains(lastFocused)) lastFocused.focus();
 }
 
-/* ---- Drawer (shopping) ---- */
 function openDrawer() {
   const root = $('#drawer');
   if (!root) return;
@@ -7870,7 +7690,7 @@ function openDrawer() {
   document.body.classList.add('no-scroll');
   requestAnimationFrame(() => {
     const f = root.querySelector('button:not([data-close-drawer]), input');
-    if (f) f.focus(); else $('#drawer-close')?.focus();
+    if (f) f.focus(); else { const c = $('#drawer-close'); if (c) c.focus(); }
   });
 }
 function closeDrawer() {
@@ -7882,7 +7702,6 @@ function closeDrawer() {
   if (lastFocused && document.contains(lastFocused)) lastFocused.focus();
 }
 
-/* ---- Confirm dialog (promise-based, reuses modal) ---- */
 function confirmDialog({ title, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', danger = false }) {
   return new Promise((resolve) => {
     const body = `<p class="confirm__msg">${message}</p>`;
@@ -7900,12 +7719,10 @@ function confirmDialog({ title, message, confirmLabel = 'Confirm', cancelLabel =
       resolve(yes);
     };
     root.addEventListener('click', handler);
-    // resolve(false) if closed by backdrop/esc
     root._confirmResolve = () => resolve(false);
   });
 }
 
-/* Focus trap + ESC for modal & drawer */
 function trapFocus(e) {
   const modal = $('#modal');
   const drawer = $('#drawer');
@@ -7914,8 +7731,10 @@ function trapFocus(e) {
   if (!active) return;
 
   if (e.key === 'Escape') {
-    if (active === modal) { if (modal._confirmResolve) { const r = modal._confirmResolve; modal._confirmResolve = null; r(); } closeModal(); }
-    else closeDrawer();
+    if (active === modal) {
+      if (modal._confirmResolve) { const r = modal._confirmResolve; modal._confirmResolve = null; r(); }
+      closeModal();
+    } else closeDrawer();
     return;
   }
   if (e.key !== 'Tab') return;
@@ -7928,21 +7747,18 @@ function trapFocus(e) {
   else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 }
 
-/* ============================================================================
-   TABS / ROUTER
-   ========================================================================== */
 function switchTab(tab) {
   ui.tab = tab;
   $$('.nav__tab').forEach((b) => {
     const active = b.dataset.tab === tab;
     b.classList.toggle('is-active', active);
     b.setAttribute('aria-selected', active ? 'true' : 'false');
+    b.tabIndex = active ? 0 : -1;
   });
   $$('.view').forEach((v) => v.classList.toggle('is-active', v.id === `view-${tab}`));
   if (tab === 'pantry') renderPantry();
   else if (tab === 'recipes') renderRecipes();
   else if (tab === 'stats') renderStats();
-  // move keyboard focus to the panel heading region for screen-reader context
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -7950,11 +7766,9 @@ function renderAll() {
   renderPantry();
   renderRecipes();
   renderStats();
-  // ensure only active view is shown
   $$('.view').forEach((v) => v.classList.toggle('is-active', v.id === `view-${ui.tab}`));
 }
 
-/* Update the shopping count badges in header + recipes toolbar. */
 function updateBadges() {
   const n = state.shopping.length;
   ['#shopping-count', '#shopping-count-inline'].forEach((sel) => {
@@ -7965,62 +7779,61 @@ function updateBadges() {
   });
 }
 
-/* ============================================================================
-   GLOBAL EVENT WIRING (delegation)
-   ========================================================================== */
 function wireEvents() {
-  // Tabs
+  const rail = $('.nav__rail');
   $$('.nav__tab').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+  if (rail) {
+    rail.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      const tabs = $$('.nav__tab');
+      const idx = tabs.findIndex((t) => t.classList.contains('is-active'));
+      const next = e.key === 'ArrowRight' ? (idx + 1) % tabs.length : (idx - 1 + tabs.length) % tabs.length;
+      switchTab(tabs[next].dataset.tab);
+      tabs[next].focus();
+    });
+  }
 
-  // Header controls
-  $('#theme-toggle')?.addEventListener('click', toggleTheme);
-  $('#shopping-btn')?.addEventListener('click', openDrawer);
+  const shoppingBtn = $('#shopping-btn');
+  if (shoppingBtn) shoppingBtn.addEventListener('click', openDrawer);
 
-  // Data menu (export/import/reset)
   const menuBtn = $('#data-menu-btn');
   const menu = $('#data-menu');
-  const closeMenu = () => { menu?.classList.remove('is-open'); menuBtn?.setAttribute('aria-expanded', 'false'); };
-  menuBtn?.addEventListener('click', (e) => {
+  const closeMenu = () => { if (menu) menu.classList.remove('is-open'); if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false'); };
+  if (menuBtn) menuBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     const open = menu.classList.toggle('is-open');
     menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
   });
-  document.addEventListener('click', () => closeMenu());
-  menu?.addEventListener('click', (e) => e.stopPropagation());
-  $('#menu-export')?.addEventListener('click', () => { closeMenu(); exportData(); });
-  $('#menu-import')?.addEventListener('click', () => { closeMenu(); $('#import-input').click(); });
-  $('#menu-reset')?.addEventListener('click', () => { closeMenu(); resetData(); });
-  $('#import-input')?.addEventListener('change', (e) => {
+  document.addEventListener('click', closeMenu);
+  if (menu) menu.addEventListener('click', (e) => e.stopPropagation());
+  const onMenu = (sel, fn) => { const el = $(sel); if (el) el.addEventListener('click', () => { closeMenu(); fn(); }); };
+  onMenu('#menu-export', exportData);
+  onMenu('#menu-import', () => $('#import-input').click());
+  onMenu('#menu-reset', resetData);
+  const importInput = $('#import-input');
+  if (importInput) importInput.addEventListener('change', (e) => {
     const file = e.target.files && e.target.files[0];
     if (file) importData(file);
     e.target.value = '';
   });
 
-  // Drawer close
-  $('#drawer')?.addEventListener('click', (e) => {
-    if (e.target.closest('[data-close-drawer]')) closeDrawer();
-  });
+  const drawer = $('#drawer');
+  if (drawer) drawer.addEventListener('click', (e) => { if (e.target.closest('[data-close-drawer]')) closeDrawer(); });
 
-  // Global keyboard (focus trap + esc)
   document.addEventListener('keydown', trapFocus);
 
-  // Modal backdrop/close + confirm cancel via backdrop
-  $('#modal')?.addEventListener('click', (e) => {
+  const modal = $('#modal');
+  if (modal) modal.addEventListener('click', (e) => {
     if (e.target.closest('[data-close-modal]')) {
-      const modal = $('#modal');
       if (modal._confirmResolve) { const r = modal._confirmResolve; modal._confirmResolve = null; r(); }
       closeModal();
     }
   });
 
-  // Delegated clicks across the app (data-action)
   document.addEventListener('click', onActionClick);
-
-  // Delegated change/input handlers for filters
   document.addEventListener('input', onInput);
   document.addEventListener('change', onChange);
 
-  // Recipe card activation (click + keyboard) via delegation
   document.addEventListener('click', (e) => {
     const card = e.target.closest('.recipe-card');
     if (card && !e.target.closest('[data-action]') && card.dataset.recipe) openRecipe(card.dataset.recipe);
@@ -8030,13 +7843,6 @@ function wireEvents() {
     const card = e.target.closest('.recipe-card');
     if (card && document.activeElement === card) { e.preventDefault(); openRecipe(card.dataset.recipe); }
   });
-
-  // System theme changes (only matters when following system)
-  if (window.matchMedia) {
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-      if (state.theme === null) applyTheme();
-    });
-  }
 }
 
 function onActionClick(e) {
@@ -8054,7 +7860,6 @@ function onActionClick(e) {
     case 'clear-pantry-filters':
       ui.pantry = { search: '', status: 'all', sort: 'expiry', category: 'all' };
       renderPantry(); break;
-
     case 'view-recipe': openRecipe(recipe); break;
     case 'start-cook': startCookMode(recipe); break;
     case 'exit-cook': { const r = SEED_RECIPES.find((x) => x.name === recipe); if (r) renderRecipeModal(r); break; }
@@ -8064,22 +7869,16 @@ function onActionClick(e) {
       ui.recipes = { search: '', diets: new Set(), maxMissing: 5, maxTime: 0, expiringOnly: false };
       renderRecipes(); break;
     case 'open-shopping': openDrawer(); break;
-
     case 'log-waste': openWasteForm(); break;
     case 'delete-waste': deleteWaste(id); break;
-
     case 'shop-to-pantry': moveCheckedToPantry(); break;
     case 'shop-clear-checked':
       state.shopping = state.shopping.filter((s) => !s.checked); save(); renderShopping(); updateBadges(); break;
     case 'shop-clear-all':
-      if (state.shopping.length) {
-        state.shopping = []; save(); renderShopping(); updateBadges(); toast('Cleared your shopping list.', 'info');
-      }
+      if (state.shopping.length) { state.shopping = []; save(); renderShopping(); updateBadges(); toast('Cleared your shopping list.', 'info'); }
       break;
     default: break;
   }
-
-  // Cook mode prev/next/jump (separate data-attrs)
 }
 
 function onInput(e) {
@@ -8103,11 +7902,8 @@ function onChange(e) {
     const item = state.shopping.find((s) => s.id === t.dataset.shopToggle);
     if (item) { item.checked = t.checked; save(); renderShopping(); }
   }
-
-  // chip groups & cook controls handled via click below
 }
 
-/* Re-focus a search input after a re-render so typing isn't interrupted. */
 function restoreFocus(sel, caret) {
   const el = $(sel);
   if (!el) return;
@@ -8126,13 +7922,10 @@ function debouncedRecipePaint() {
   }, 130);
 }
 
-/* Chip clicks, cook controls, shopping toggles handled here (delegation) */
 document.addEventListener('click', (e) => {
-  // Pantry status chips
   const ps = e.target.closest('[data-pantry-status]');
   if (ps) { ui.pantry.status = ps.dataset.pantryStatus; renderPantry(); return; }
 
-  // Recipe diet chips
   const dc = e.target.closest('[data-diet]');
   if (dc) {
     const tag = dc.dataset.diet;
@@ -8142,7 +7935,6 @@ document.addEventListener('click', (e) => {
     return;
   }
 
-  // Recipe time chips
   const tc = e.target.closest('[data-time]');
   if (tc) {
     ui.recipes.maxTime = parseInt(tc.dataset.time, 10);
@@ -8151,30 +7943,20 @@ document.addEventListener('click', (e) => {
     return;
   }
 
-  // Cook controls
   if (e.target.closest('[data-cook-next]')) { cookStep(1); return; }
   if (e.target.closest('[data-cook-prev]')) { cookStep(-1); return; }
   const jump = e.target.closest('[data-cook-jump]');
   if (jump) { cookJump(parseInt(jump.dataset.cookJump, 10)); return; }
 
-  // Shopping remove
   const rm = e.target.closest('[data-shop-remove]');
-  if (rm) {
-    state.shopping = state.shopping.filter((s) => s.id !== rm.dataset.shopRemove);
-    save(); renderShopping(); updateBadges(); return;
-  }
+  if (rm) { state.shopping = state.shopping.filter((s) => s.id !== rm.dataset.shopRemove); save(); renderShopping(); updateBadges(); return; }
 });
 
-/* ============================================================================
-   INIT
-   ========================================================================== */
 function init() {
   state = loadState();
-  applyTheme();
   wireEvents();
   updateBadges();
-  switchTab('pantry'); // renders pantry; recipes/stats render lazily on first open
-  // Pre-render the other views so tab switches are instant.
+  switchTab('pantry');
   renderRecipes();
   renderStats();
   $$('.view').forEach((v) => v.classList.toggle('is-active', v.id === 'view-pantry'));
